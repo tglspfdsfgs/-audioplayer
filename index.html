@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Audio-player</title>
+	<link rel="stylesheet" type="text/css" href="normalize.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body class="container">
+	<img class="container__bg-image" src="assets/img/Rock_Roll_Queen.jpg">
+	<div class="player container__player">
+		<div class="player__thumbnail">
+			<img class="player__thumbnail-img" src="assets/img/Rock_Roll_Queen.jpg">
+		</div>
+		<div class="player__controls controls">
+			<audio src="assets/audio/beyonce.mp3"></audio>
+			<button class="controls__play-btn" type="button"></button>
+			<div class="controls__song-title">
+				<div class="controls__artist">The Subways</div>
+				<div class="controls__song-name">Rock & Roll Queen</div>
+			</div>
+			<div class="controls__switch-section">
+				<button class="controls__prev-btn" type="button"></button>
+				<button class="controls__next-btn" type="button"></button>
+			</div>
+			<div class="controls__time-sec">
+				<div class="controls__song-length">00:00</div>
+				<div class="controls__timeline">
+					<div class="controls__thumb" style="left: 0px;"></div>
+				</div>
+				<div class="controls__song-current-time">00:00</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	let playList = {
+		
+		list: [
+		{artist: `The Subways`, name: `Rock & Roll Queen`, imagePath: `assets/img/Rock_Roll_Queen.jpg`, audioPath: `assets/audio/Rock_Roll_Queen.mp3`},
+		{artist: `The Queen`, name: `Another One Bites The Dust`, imagePath: `assets/img/Another_One_Bites_The_Dust.jpg`, audioPath: `assets/audio/Another_One_Bites_The_Dust.mp3`},
+		{artist: `Nine Inch Nails`, name: `Closer to God`, imagePath: `assets/img/NIN.jpg`, audioPath: `assets/audio/NIN.mp3`},
+		{artist: `Savage Garden`, name: `I want you`, imagePath: `assets/img/Savage_Garden.jpg`, audioPath: `assets/audio/Savage_Garden.mp3`},
+		{artist: `P.T. Adamczyk`, name: `The Rebel Path`, imagePath: `assets/img/The_Rebel_Path.jpg`, audioPath: `assets/audio/The_Rebel_Path.mp3`},
+		{artist: `The Bangles`, name: `Walk Like an Egyptian`, imagePath: `assets/img/Walk_Like_an_Egyptian.jpg`, audioPath: `assets/audio/Walk_Like_an_Egyptian.mp3`},
+		],
+
+		current: 0,
+
+		currentOne() {
+			return this.list[this.current];
+		},
+
+		nextOne() {
+			if (this.current+1 > this.list.length-1) {
+				this.current = 0;
+			} else {
+				this.current++;
+			}
+			return this.list[this.current];
+		},
+
+		prevOne() {
+			if (this.current-1 < 0) {
+				this.current =  this.list.length-1;
+			} else {
+				this.current--;
+			}
+			return this.list[this.current];
+		},
+	}
+	let controls = document.querySelector('.controls');
+
+	let artist = controls.querySelector('.controls__artist');
+	let songName = controls.querySelector('.controls__song-name');
+
+	let songLength = controls.querySelector('.controls__song-length');
+	let songCurrTime = controls.querySelector('.controls__song-current-time');
+
+	let playBtn = controls.querySelector('.controls__play-btn');
+	let nextBtn = controls.querySelector('.controls__next-btn');
+	let prevBtn = controls.querySelector('.controls__prev-btn');
+
+	let thumb = controls.querySelector('.controls__thumb');
+	let timeline = controls.querySelector('.controls__timeline');
+
+	let bgImage = document.querySelector('.container__bg-image');
+	let thumbnail = document.querySelector('.player__thumbnail').firstElementChild;
+
+	let intervalId;
+	let playingTrack = new Audio(playList.currentOne().audioPath);
+
+	playingTrack.addEventListener('pause', onPause);
+	playingTrack.addEventListener("loadeddata", loadeddataFunc);
+
+	function loadeddataFunc() {
+		songLength.textContent = getTimeCodeFromSec(playingTrack.duration);
+	}
+
+	function onPause() {
+		if (playingTrack.currentTime >= playingTrack.duration) {
+			playBtn.classList.remove('controls__play-btn--pause');
+			clearInterval(intervalId);
+		}		
+	}
+
+	function getTimeCodeFromSec(num) {
+		let min = parseInt(num / 60) + "";
+		min = min.length < 2 ? '0' + min : min;
+		let sec = parseInt(num - min * 60) + "";
+		sec = sec.length < 2 ? '0' + sec : sec;
+		return `${min}:${sec}`;
+	}
+
+	let intervalFunc = () => {
+		songCurrTime.textContent = getTimeCodeFromSec(playingTrack.currentTime);
+		if (!isDragging) {
+			let progress = playingTrack.currentTime * avaliableTimeline / playingTrack.duration;
+			thumb.style.left = parseInt(progress) + 'px';
+		}
+	}
+
+	playBtn.onpointerup = function (event) {
+		if (playingTrack.paused) {
+			playBtn.classList.add('controls__play-btn--pause');
+			playingTrack.play();
+			intervalId = setInterval( intervalFunc, 500);
+		} else {
+			playBtn.classList.remove('controls__play-btn--pause');
+			playingTrack.pause();
+			clearInterval(intervalId);
+		}
+	}
+
+	function loadTrack(nextTrack) {
+		let lastTrack = playingTrack;
+		lastTrack.removeEventListener("loadeddata", loadeddataFunc);
+		lastTrack.removeEventListener('pause', onPause);
+
+		playingTrack = new Audio(nextTrack.audioPath);
+		playingTrack.addEventListener("loadeddata", loadeddataFunc);
+		playingTrack.addEventListener('pause', onPause);
+
+		artist.textContent = nextTrack.artist;
+		songName.textContent = nextTrack.name;
+
+		bgImage.src = nextTrack.imagePath;
+		thumbnail.src = nextTrack.imagePath;
+
+		thumb.style.left = '0px';
+		songCurrTime.textContent = '00:00';
+
+		if (!lastTrack.paused) {
+			playingTrack.play();			
+		} else {
+			clearInterval(intervalId);
+		}
+		lastTrack.pause();	
+
+	}
+
+	nextBtn.onpointerup = function(event) {
+		loadTrack(playList.nextOne());
+	}
+	prevBtn.onpointerup = function(event) {
+		loadTrack(playList.prevOne());
+	}
+
+	let avaliableTimeline = timeline.offsetWidth - thumb.offsetWidth;
+	let isDragging = false;
+
+	thumb.onpointerdown = function(event) {
+		event.preventDefault();
+		isDragging = true;
+		let timelineCoord = timeline.getBoundingClientRect();
+		let thumbCoord = thumb.getBoundingClientRect();
+		let thumbShift = event.clientX - thumbCoord.left;
+		let timelineShift = timelineCoord.left;
+		let stopPosition;
+
+		function moveAt(X) {
+			if (X < timelineCoord.left) {
+				X = timelineCoord.left;
+			}
+			if (X > timelineCoord.right - thumb.offsetWidth) {
+				X = timelineCoord.right - thumb.offsetWidth;
+			}
+			thumb.style.left = X - timelineShift + 'px';
+			return X - timelineShift;
+		}
+
+		function onPointerMove(event) {
+			stopPosition = moveAt(event.clientX - thumbShift);
+		}
+
+		document.addEventListener('pointermove', onPointerMove);
+		document.onpointerup = function(event) {
+			document.removeEventListener('pointermove', onPointerMove);
+			document.onpointerup = null;
+			isDragging = false;
+			let timeProgress = stopPosition * playingTrack.duration / avaliableTimeline;
+			if (timeProgress >= playingTrack.duration) {
+				timeProgress = playingTrack.duration;
+			}
+			playingTrack.currentTime = timeProgress;
+		}
+	}
+</script>
+</html>
