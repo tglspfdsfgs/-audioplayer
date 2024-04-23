@@ -1,7 +1,9 @@
 
 # AudioPlayer App
 
-Welcome to the AudioPlayer App! This application is a music player designed to allow users to enjoy their favorite tracks seamlessly. Here's an overview of the features:
+Welcome to the AudioPlayer App! This application is a music player designed to allow users to enjoy their favorite tracks seamlessly.
+
+Deployment: https://tglspfdsfgs.github.io/audioplayer/
 
 ## Features:
 
